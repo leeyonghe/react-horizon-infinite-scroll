@@ -39,7 +39,10 @@
     "component",
     "typescript"
   ],
-  "author": "",
+  "author": {
+    "name": "DavidLee",
+    "url": "https://github.com/leeyonghe"
+  },
   "license": "ISC",
   "sideEffects": false
 }
