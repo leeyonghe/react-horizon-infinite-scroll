@@ -14,8 +14,6 @@ React 애플리케이션을 위한 가볍고 커스터마이징 가능한 무한
 - ✅ Comprehensive test coverage / 포괄적인 테스트 커버리지
 - 🔍 TypeScript support (optional) / TypeScript 지원 (선택적)
 
-스크롤방법
-1 -> 2 -> 3 -> 1 -> 2 -> 3 -> ...
 
 ## Installation / 설치
 
