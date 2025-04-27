@@ -36,8 +36,12 @@ import InfiniteScroll from 'react-horizon-infinite-scroll';
 function App() {
   const [items, setItems] = useState(Array.from({ length: 20 }, (_, i) => i + 1));
   const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadMore = () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    
     return new Promise((resolve) => {
       setTimeout(() => {
         const newItems = Array.from(
@@ -46,6 +50,7 @@ function App() {
         );
         setItems((prevItems) => [...prevItems, ...newItems]);
         setHasMore(items.length < 100);
+        setIsLoading(false);
         resolve();
       }, 1000);
     });
@@ -77,6 +82,117 @@ function App() {
 }
 ```
 
+### Advanced Usage / 고급 사용법
+
+#### Custom Loading Component / 커스텀 로딩 컴포넌트
+
+```jsx
+import React from 'react';
+import InfiniteScroll from 'react-horizon-infinite-scroll';
+
+const CustomLoader = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    padding: '20px' 
+  }}>
+    <div className="spinner"></div>
+    <span style={{ marginLeft: '10px' }}>Loading more items...</span>
+  </div>
+);
+
+function App() {
+  // ... other code ...
+
+  return (
+    <InfiniteScroll
+      onLoadMore={loadMore}
+      hasMore={hasMore}
+      loader={<CustomLoader />}
+      threshold={150}
+    >
+      {/* Content */}
+    </InfiniteScroll>
+  );
+}
+```
+
+#### Container-based Scrolling / 컨테이너 기반 스크롤링
+
+```jsx
+function App() {
+  return (
+    <div style={{ height: '500px', border: '1px solid #ccc' }}>
+      <InfiniteScroll
+        onLoadMore={loadMore}
+        hasMore={hasMore}
+        scrollContainer="parent"
+        style={{ height: '100%', overflow: 'auto' }}
+      >
+        <div style={{ padding: '20px' }}>
+          {items.map((item) => (
+            <div key={item} className="item">
+              Item {item}
+            </div>
+          ))}
+        </div>
+      </InfiniteScroll>
+    </div>
+  );
+}
+```
+
+#### Error Handling / 에러 처리
+
+```jsx
+function App() {
+  const [error, setError] = useState(null);
+
+  const loadMore = () => {
+    return new Promise((resolve, reject) => {
+      // Simulate API call
+      fetch('https://api.example.com/items')
+        .then(response => {
+          if (!response.ok) throw new Error('Network error');
+          return response.json();
+        })
+        .then(data => {
+          setItems(prev => [...prev, ...data]);
+          setHasMore(data.length > 0);
+          resolve();
+        })
+        .catch(err => {
+          setError(err.message);
+          reject(err);
+        });
+    });
+  };
+
+  return (
+    <InfiniteScroll
+      onLoadMore={loadMore}
+      hasMore={hasMore}
+      loader={<div>Loading...</div>}
+    >
+      {error ? (
+        <div style={{ color: 'red', padding: '20px' }}>
+          Error: {error}
+          <button onClick={() => setError(null)}>Retry</button>
+        </div>
+      ) : (
+        <div className="items-container">
+          {items.map(item => (
+            <div key={item.id} className="item">
+              {item.content}
+            </div>
+          ))}
+        </div>
+      )}
+    </InfiniteScroll>
+  );
+}
+```
+
 ### Props / 속성
 
 | Prop / 속성 | Type / 타입 | Default / 기본값 | Description / 설명 |
@@ -90,18 +206,54 @@ function App() {
 | `className` | string | undefined | CSS class for the container / 컨테이너의 CSS 클래스 |
 | `style` | CSSProperties | undefined | Inline styles for the container / 컨테이너의 인라인 스타일 |
 
-### Container-based Scrolling / 컨테이너 기반 스크롤링
+### Best Practices / 모범 사례
 
-```jsx
-<InfiniteScroll
-  onLoadMore={loadMore}
-  hasMore={hasMore}
-  scrollContainer="parent"
-  style={{ height: '500px', overflow: 'auto' }}
->
-  {/* Content / 콘텐츠 */}
-</InfiniteScroll>
-```
+1. **Performance Optimization / 성능 최적화**
+   - Use `React.memo` for child components / 자식 컴포넌트에 `React.memo` 사용
+   ```jsx
+   const Item = React.memo(({ data }) => (
+     <div className="item">{data}</div>
+   ));
+   ```
+   - Implement proper cleanup in `onLoadMore` / `onLoadMore`에서 적절한 정리 구현
+   ```jsx
+   const loadMore = () => {
+     let isMounted = true;
+     return new Promise((resolve) => {
+       fetchData().then(data => {
+         if (isMounted) {
+           setItems(prev => [...prev, ...data]);
+           resolve();
+         }
+       });
+       return () => { isMounted = false; };
+     });
+   };
+   ```
+   - Use virtualization for large lists / 대용량 목록에 가상화 사용
+   ```jsx
+   import { VirtualizedList } from 'react-virtualized';
+   
+   <InfiniteScroll onLoadMore={loadMore} hasMore={hasMore}>
+     <VirtualizedList
+       rowCount={items.length}
+       rowHeight={100}
+       rowRenderer={({ index }) => (
+         <Item data={items[index]} />
+       )}
+     />
+   </InfiniteScroll>
+   ```
+
+2. **Error Handling / 오류 처리**
+   - Implement error boundaries / 오류 경계 구현
+   - Handle failed load attempts / 실패한 로드 시도 처리
+   - Provide retry mechanisms / 재시도 메커니즘 제공
+
+3. **Accessibility / 접근성**
+   - Ensure keyboard navigation support / 키보드 탐색 지원 보장
+   - Provide loading state announcements / 로딩 상태 알림 제공
+   - Maintain focus management / 포커스 관리 유지
 
 ## Development / 개발
 
@@ -147,23 +299,6 @@ npm run build
 yarn build
 ```
 
-## Best Practices / 모범 사례
-
-1. **Performance Optimization / 성능 최적화**
-   - Use `React.memo` for child components / 자식 컴포넌트에 `React.memo` 사용
-   - Implement proper cleanup in `onLoadMore` / `onLoadMore`에서 적절한 정리 구현
-   - Use virtualization for large lists / 대용량 목록에 가상화 사용
-
-2. **Error Handling / 오류 처리**
-   - Implement error boundaries / 오류 경계 구현
-   - Handle failed load attempts / 실패한 로드 시도 처리
-   - Provide retry mechanisms / 재시도 메커니즘 제공
-
-3. **Accessibility / 접근성**
-   - Ensure keyboard navigation support / 키보드 탐색 지원 보장
-   - Provide loading state announcements / 로딩 상태 알림 제공
-   - Maintain focus management / 포커스 관리 유지
-
 ## Contributing / 기여하기
 
 1. Fork the repository / 저장소를 포크합니다
@@ -174,7 +309,7 @@ yarn build
 
 ## License / 라이선스
 
-This project is licensed under the ISC License. / 이 프로젝트는 ISC 라이선스 하에 있습니다.
+This project is licensed under the MIT License. / 이 프로젝트는 MIT 라이선스 하에 있습니다.
 
 ## Support / 지원
 
