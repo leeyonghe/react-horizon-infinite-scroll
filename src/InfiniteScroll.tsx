@@ -7,8 +7,6 @@ import { CSSProperties } from 'react';
 export default function InfiniteScroll({
   data,
   isHorizontal = true,
-  onLoadMore,
-  renderItem,
   leftButton,
   rightButton,
   leftButtonCSS,
@@ -97,18 +95,6 @@ export default function InfiniteScroll({
       left: 0
     }
   };
-
-  const loadMore = useCallback(async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      if (onLoadMore) {
-        await onLoadMore();
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, onLoadMore]);
 
   const handleNext = () => {
     setCurrentIndex(prev => (prev + 1) % items.length);

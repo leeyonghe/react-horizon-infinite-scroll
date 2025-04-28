@@ -1,8 +1,6 @@
 export interface InfiniteScrollProps {
     data: Item[];
     isHorizontal?: boolean;
-    onLoadMore?: () => Promise<void>;
-    renderItem?: (item: Item, index: number) => React.ReactNode;
     leftButton?: string;
     rightButton?: string;
     leftButtonCSS?: React.CSSProperties;
