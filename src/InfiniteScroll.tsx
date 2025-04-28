@@ -15,14 +15,12 @@ export default function InfiniteScroll({
 }: InfiniteScrollProps) {
 
   const [items, setItems] = useState(data);
-  const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayedItems, setDisplayedItems] = useState(() => {
     const length = Math.min(data.length, 5);
     return Array.from({ length }, (_, i) => i);
   });
   const [slideOffset, setSlideOffset] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
@@ -171,7 +169,6 @@ export default function InfiniteScroll({
       </button>
 
       <div
-        ref={containerRef}
         style={styles.contentContainer}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
